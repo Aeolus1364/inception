@@ -1,6 +1,8 @@
 import pygame
 import comet
 import cfg
+import gravity
+import math
 
 
 class Main:
@@ -19,8 +21,8 @@ class Main:
 
         print(self.surface.get_rect())
 
-
     def main_loop(self):
+        grav_on = False
         while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -29,21 +31,19 @@ class Main:
                     if event.key == pygame.K_q:
                         self.running = False
                     if event.key == pygame.K_SPACE:
-                        self.group.empty()
+                        self.group.add(comet.Comet())
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_SPACE:
+                        grav_on = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    grav_on = True
+                if event.type == pygame.MOUSEBUTTONUP:
+                    grav_on = False
 
-            # for i in self.group.sprites():
-            #     # if not self.surface.get_rect().colliderect(i.rect):
-            #     #     self.group.remove(i)
-            #     cursor = pygame.mouse.get_pos()
-            #     if i.rect.x > cursor[0]:
-            #         i.x_vel -= 0.5
-            #     else:
-            #         i.x_vel += 0.5
-            #
-            #     if i.rect.y > cursor[1]:
-            #         i.y_vel -= 0.5
-            #     else:
-            #         i.y_vel += 0.5
+
+            if grav_on:
+                for i in self.group.sprites():
+                    i.x_acc, i.y_acc = gravity.grav_acc((i.rect.centerx, i.rect.centery), (pygame.mouse.get_pos()), 50)
 
             self.surface.fill((0, 0, 0))
 
@@ -51,12 +51,21 @@ class Main:
 
             self.group.draw(self.surface)
 
-            if len(self.group.sprites()) < 100 :
+            for i in self.group.sprites():
+                for j in self.group.sprites():
+                    if gravity.circ_coll(i.rect.center, 32, j.rect.center, 32):
+                        if not i == j:
+                            print("SMASH")
+                            i.kill()
+                            j.kill()
+
+            if len(self.group.sprites()) < 4:
                 self.group.add(comet.Comet())
 
             # print(len(self.group.sprites()))
 
             pygame.display.update()
+            # print(pygame.time.get_ticks())
             self.clock.tick(self.fps)
 
 

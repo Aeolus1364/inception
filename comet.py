@@ -8,11 +8,15 @@ class Comet(pygame.sprite.Sprite):
     def __init__(self):
         super(Comet, self).__init__()
 
-        self.image = pygame.image.load("circle.png")
+        self.image = pygame.image.load("meteor.png")
+        self.image = pygame.transform.scale2x(pygame.image.load("meteor.png"))
         self.rect = self.image.get_rect()
 
         self.x_vel = 0
         self.y_vel = 0
+
+        self.x_acc = 0
+        self.y_acc = 0
 
         self.spawn()
 
@@ -65,8 +69,14 @@ class Comet(pygame.sprite.Sprite):
         print(ang)
 
     def update(self, *args):
+        # print(self.x_acc, self.x_vel)
+        self.x_vel += self.x_acc
+        self.y_vel += self.y_acc
         self.rect.x += self.x_vel
         self.rect.y += self.y_vel
+
+        self.x_acc = 0
+        self.y_acc = 0
 
 
 class GroupComet(pygame.sprite.Group):
