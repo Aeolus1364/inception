@@ -4,6 +4,31 @@ import cfg
 import math
 
 
+class Body(pygame.sprite.Sprite):
+    def __init__(self, pos, mass, image):
+        super(Body, self).__init__()
+
+        self.image = pygame.image.load(image)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = pos[0]
+        self.rect.centery = pos[1]
+
+        self.mass = mass
+        self.radius = self.rect.w / 2
+
+        self.x_vel = 0
+        self.y_vel = 0
+        self.x_acc = 0
+        self.y_acc = 0
+
+    def apply_force(self, mag, ang):
+        acc = mag / self.mass
+
+
+body = Body((0, 0), 50, "meteor.png")
+print(body.radius)
+
+
 class Comet(pygame.sprite.Sprite):
     def __init__(self):
         super(Comet, self).__init__()

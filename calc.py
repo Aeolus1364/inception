@@ -35,3 +35,5 @@ def circ_coll(loc1, rad1, loc2, rad2):
     else:
         return False
 
+
+# def vect

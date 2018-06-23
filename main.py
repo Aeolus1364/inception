@@ -1,7 +1,7 @@
 import pygame
 import comet
 import cfg
-import gravity
+import calc
 import math
 
 
@@ -11,7 +11,7 @@ class Main:
 
         self.running = True
         self.clock = pygame.time.Clock()
-        self.surface = pygame.display.set_mode(cfg.dim)
+        self.surface = pygame.display.set_mode(cfg.dim, pygame.FULLSCREEN)
         self.fps = 60
 
         self.comet = comet.Comet()
@@ -43,7 +43,7 @@ class Main:
 
             if grav_on:
                 for i in self.group.sprites():
-                    i.x_acc, i.y_acc = gravity.grav_acc((i.rect.centerx, i.rect.centery), (pygame.mouse.get_pos()), 50)
+                    i.x_acc, i.y_acc = calc.grav_acc((i.rect.centerx, i.rect.centery), (pygame.mouse.get_pos()), 50)
 
             self.surface.fill((0, 0, 0))
 
@@ -51,13 +51,23 @@ class Main:
 
             self.group.draw(self.surface)
 
-            for i in self.group.sprites():
-                for j in self.group.sprites():
-                    if gravity.circ_coll(i.rect.center, 32, j.rect.center, 32):
-                        if not i == j:
-                            print("SMASH")
-                            i.kill()
-                            j.kill()
+            # for i in self.group.sprites():
+            #     for j in self.group.sprites():
+            #         if calc.circ_coll(i.rect.center, 32, j.rect.center, 32):
+            #             if not i == j:
+            #                 print("SMASH")
+            #                 i.kill()
+            #                 j.kill()
+
+            sprites = self.group.sprites()
+
+            for i in sprites:
+                sprites.remove(i)
+                for j in sprites:
+                    if calc.circ_coll(i.rect.center, 32, j.rect.center, 32):
+                        print("SMASH")
+                        i.kill()
+                        j.kill()
 
             if len(self.group.sprites()) < 4:
                 self.group.add(comet.Comet())
