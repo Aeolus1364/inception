@@ -1,5 +1,9 @@
 dim = (1280, 800)
 spawn_dist = 200
+kill_dist = 500
 spawn_ang = 60
-grav_const = 400
+grav_const = 100
 max_acc = 5
+min_ratio = 0.1
+max_ratio = 1.5
+mult_ratio = 0.5
