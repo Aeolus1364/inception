@@ -10,11 +10,10 @@ pygame.init()
 pygame.mixer.music.load("res/music.wav")
 pygame.mixer.music.play(-1)
 
+
 class Main:
     def __init__(self):
         pygame.mouse.set_visible(False)
-
-
 
         pygame.display.set_caption("Inception")
         pygame.display.set_icon(res.asteroid)
@@ -49,8 +48,8 @@ class Main:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_q:
                         self.running = False
-                    if event.key == pygame.K_SPACE:
-                        self.medium_group.add(body.Medium())
+                    # if event.key == pygame.K_SPACE:
+                    #     self.medium_group.add(body.Medium())
                     if event.key == pygame.K_ESCAPE:
                         self.pause = True
                     if event.key == pygame.K_f:
@@ -154,6 +153,14 @@ class Main:
                     for k in range(random.randint(30, 40)):
                         self.explode_group.add(body.Small(self.planet.rect.center))
                     self.planet.kill()
+
+            if not self.planet.alive:
+                pygame.font.init()
+                font = pygame.font.SysFont('Arial', 60)
+                textsurf = font.render('Game Over Press R to Restart', True, (255, 255, 255))
+                rect = textsurf.get_rect()
+                rect.center = self.surface.get_rect().center
+                self.surface.blit(textsurf, rect)
 
             pygame.display.update()
             self.clock.tick(self.fps)
