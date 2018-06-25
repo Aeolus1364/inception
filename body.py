@@ -41,7 +41,7 @@ class Object(Body):
         if spawn_loc:
             self.spawn_collision(1, 4, spawn_loc)
         else:
-            self.spawn_offscreen(3, 5)
+            self.spawn_offscreen(2, 4)
 
     def spawn_offscreen(self, vmin, vmax):
         vel = random.uniform(vmin, vmax)
@@ -92,7 +92,6 @@ class Object(Body):
         self.rect.center = center
         num = random.uniform(vmin, vmax)
         self.x_vel, self.y_vel = calc.vect2grid(num, random.randint(0, 360))
-        print(num)
 
 
 class Small(Object):
@@ -124,29 +123,36 @@ class Planet(Body):
 
         self.alive = True
         self.rect.center = (cfg.dim[0] / 2, cfg.dim[1] / 2)
-        self.mass = 10
+        self.mass = 15
         self.size = 1
 
     def draw(self, surf):
         if self.alive:
             surf.blit(self.image, self.rect)
-        if self.mass > 20:
-            self.image_original = res.planet
-        if self.mass > 60:
+        if self.radius > 48:
+            self.image_original = res.roundy
+        if self.radius > 80:
             self.image_original = res.planetoid
+        if self.radius > 128:
+            self.image_original = res.planet
+        if self.radius > 200:
+            self.image_original = res.gasgiant
+        if self.radius > 260:
+            self.image_original = res.star
 
     def kill(self):
         self.alive = False
 
-    def bombard(self, mass):
-        ratio = mass/self.mass
-        if ratio < cfg.min_ratio:
+    def bombard(self):
+        if self.mass < 20:
+            self.kill()
             return False
-        elif ratio > cfg.max_ratio:
+        elif self.mass < 150:
+            self.mass -= 2
             return True
         else:
-            prob = ratio / cfg.mult_ratio
-            return random.choices((True, False), (prob, 1))
+            self.mass += 4
+        return self.alive
 
     def resize(self, factor):
         self.size *= factor

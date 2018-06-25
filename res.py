@@ -9,10 +9,12 @@ def load(image):
 
 mouse_unclicked = load("res/mouse1.png")
 mouse_clicked = load("res/mouse2.png")
-button = load("res/button.png")
 meteoroid = load("res/meteoroid.png")
 asteroid = load("res/asteroid.png")
 planet = load("res/planet.png")
+roundy = load("res/planet2.png")
 planetoid = load("res/planetoid.png")
+gasgiant = load("res/gasgiant.png")
+star = load("res/star.png")
 
 
