@@ -3,19 +3,16 @@ import pygame
 import cfg
 import math
 import calc
+import res
 
 
 class Body(pygame.sprite.Sprite):
-    def __init__(self, image=""):
+    def __init__(self, image):
         super(Body, self).__init__()
 
-        if image:
-            self.image = pygame.image.load(image)
-            self.image = pygame.transform.scale2x(self.image)
-        else:
-            self.image = pygame.Surface((0, 0))
-
+        self.image = image
         self.rect = self.image.get_rect()
+
         self.radius = self.rect.w / 2
         self.mass = 0
 
@@ -34,15 +31,20 @@ class Body(pygame.sprite.Sprite):
         self.y_acc = 0
 
 
-class Comet(Body):
-    def __init__(self):
-        super(Comet, self).__init__("meteor.png")
+class Object(Body):
+    def __init__(self, image, spawn_loc=None):
+        super(Object, self).__init__(image)
+        factor = random.uniform(0.8, 1.25)
+        self.rect, self.image = calc.resize(self.rect, self.image, factor)
+        self.radius = self.rect.w / 2
 
-        self.mass = 25
-        self.spawn()
+        if spawn_loc:
+            self.spawn_collision(1, 4, spawn_loc)
+        else:
+            self.spawn_offscreen(3, 5)
 
-    def spawn(self):
-        vel = random.uniform(3, 5)
+    def spawn_offscreen(self, vmin, vmax):
+        vel = random.uniform(vmin, vmax)
         ang = 0
 
         side = random.choice(("up", "down", "left", "right"))
@@ -86,28 +88,37 @@ class Comet(Body):
         self.x_vel = vel * math.cos(math.radians(ang))
         self.y_vel = -vel * math.sin(math.radians(ang))
 
-        # print(self.rect.x, self.rect.y)
-        # print(ang)
-
-
-class GroupComet(pygame.sprite.Group):
-    def __init__(self):
-        super(GroupComet, self). __init__()
-
-
-class Matter(Body):
-    def __init__(self, center):
-        super(Matter, self).__init__("matter.png")
-
+    def spawn_collision(self, vmin, vmax, center):
         self.rect.center = center
+        num = random.uniform(vmin, vmax)
+        self.x_vel, self.y_vel = calc.vect2grid(num, random.randint(0, 360))
+        print(num)
 
-        self.x_vel, self.y_vel = calc.vect2grid(random.uniform(1, 5), random.randint(0, 360))
+
+class Small(Object):
+    def __init__(self, spawn_loc=None):
+        super(Small, self).__init__(res.meteoroid, spawn_loc)
+
+
+class Medium(Object):
+    def __init__(self, spawn_loc=None):
+        super(Medium, self).__init__(res.asteroid, spawn_loc)
+        self.mass = 25
+
+
+class Large(Object):
+    def __init__(self, spawn_loc=None):
+        super(Large, self).__init__(res.planetoid, spawn_loc)
+
+
+class Group(pygame.sprite.Group):
+    def __init__(self):
+        super(Group, self). __init__()
 
 
 class Planet(Body):
     def __init__(self):
-        super(Planet, self).__init__("planet.png")
-
+        super(Planet, self).__init__(res.asteroid)
         self.image_original = self.image
         self.rect_original = self.rect
 
@@ -119,6 +130,10 @@ class Planet(Body):
     def draw(self, surf):
         if self.alive:
             surf.blit(self.image, self.rect)
+        if self.mass > 20:
+            self.image_original = res.planet
+        if self.mass > 60:
+            self.image_original = res.planetoid
 
     def kill(self):
         self.alive = False
@@ -136,12 +151,6 @@ class Planet(Body):
     def resize(self, factor):
         self.size *= factor
 
-        # center = self.rect.center
-        # size = int(self.rect_original.w * self.size), int(self.rect_original.h * self.size)
-        # self.image = pygame.transform.scale(self.image_original, size)
-        # self.rect = self.image.get_rect()
-        # self.rect.center = center
-
         self.rect, self.image = calc.resize(self.rect_original, self.image_original, self.size)
 
         self.radius = self.rect.w / 2
@@ -149,12 +158,11 @@ class Planet(Body):
 
 class Mouse(Body):
     def __init__(self):
-        super(Mouse, self).__init__("mouse1.png")
+        super(Mouse, self).__init__(pygame.Surface((0, 0)))
         self.mass = 100
-        self.clicked = pygame.image.load("mouse2.png")
-        self.clicked = pygame.transform.scale2x(self.clicked)
-        self.unclicked = pygame.image.load("mouse1.png")
-        self.unclicked = pygame.transform.scale2x(self.unclicked)
+        self.clicked = res.mouse_clicked
+        self.unclicked = res.mouse_unclicked
+        self.image = self.unclicked
 
     def update(self, *args):
         self.rect.center = pygame.mouse.get_pos()
