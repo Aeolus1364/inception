@@ -14,22 +14,42 @@ pygame.mixer.music.play(-1)
 
 class Main:
     def __init__(self):
-        pygame.mouse.set_visible(False)
+        cfg.init()
+
+        self.data = pygame.display.Info()
+        self.max_res = self.data.current_w, self.data.current_h
+        self.min_res = cfg.dim
 
         pygame.display.set_caption("Inception")
         pygame.display.set_icon(res.asteroid)
+        pygame.mouse.set_visible(False)
 
         self.running = True
         self.restart = False
-        self.fullscreen = cfg.fullscreen
         self.clock = pygame.time.Clock()
-        if self.fullscreen:
-            self.surface = pygame.display.set_mode(cfg.dim, pygame.FULLSCREEN)
-        else:
-            self.surface = pygame.display.set_mode(cfg.dim, pygame.RESIZABLE)
 
+        self.surface = pygame.display.set_mode(cfg.dim)
         self.fps = 30
+        self.fullscreen = False
+        self.midpoint = (cfg.dim[0] / 2, cfg.dim[1] / 2)
 
+        self.mouse = body.Mouse()
+
+        buttons = [
+            menu.Button("Start", 30, (self.midpoint[0], self.midpoint[1] - 150)),
+            menu.Button("Settings", 30, (self.midpoint[0], self.midpoint[1] - 75)),
+            menu.Button("Controls", 30, (self.midpoint[0], self.midpoint[1])),
+            menu.Button("Credits", 30, (self.midpoint[0], self.midpoint[1] + 75)),
+            menu.Button("Quit", 30, (self.midpoint[0], self.midpoint[1] + 150))
+        ]
+
+        self.main_menu = menu.Menu(buttons)
+
+        self.main_menu_loop()
+
+        self.multi_init()
+
+    def multi_init(self):
         self.time_init = time.time()
         self.wait = 0
 
@@ -38,21 +58,16 @@ class Main:
         self.small_group = body.Group()
         self.explode_group = body.Group()
         self.planet = body.Planet()
-        self.mouse = body.Mouse()
 
-        button1 = menu.Button("Resume", 30, (cfg.dim[0] / 2, 250))
-        button2 = menu.Button("Restart", 30, (cfg.dim[0] / 2, 325))
-
-        self.buttons = [
-            menu.Button("Resume", 30, (cfg.dim[0] / 2, 250)),
-            menu.Button("Restart", 30, (cfg.dim[0] / 2, 325)),
-            menu.Button("Controls", 30, (cfg.dim[0] / 2, 400)),
-            menu.Button("Main Menu", 30, (cfg.dim[0] / 2, 475))
+        buttons = [
+            menu.Button("Resume", 30, (self.midpoint[0], self.midpoint[1] - 150)),
+            menu.Button("Restart", 30, (self.midpoint[0], self.midpoint[1] - 75)),
+            menu.Button("Controls", 30, (self.midpoint[0], self.midpoint[1])),
+            menu.Button("Main Menu", 30, (self.midpoint[0], self.midpoint[1] + 75)),
+            menu.Button("Quit", 30, (self.midpoint[0], self.midpoint[1] + 150))
         ]
 
-        self.buttons = [button1, button2]
-
-        self.menu = menu.Menu(self.buttons)
+        self.pause_menu = menu.Menu(buttons)
 
         self.main_loop()
 
@@ -62,19 +77,13 @@ class Main:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_q:
                         self.running = False
                     if event.key == pygame.K_ESCAPE:
                         if self.planet.alive:
-                            self.menu_loop()
-                    if event.key == pygame.K_f:
-                        if self.fullscreen:
-                            self.surface = pygame.display.set_mode((self.sd.current_w, self.sd.current_h), pygame.FULLSCREEN)
-                            self.fullscreen = False
-                        else:
-                            self.surface = pygame.display.set_mode(cfg.dim)
-                            self.fullscreen = True
+                            self.pause_menu_loop()
                     if event.key == pygame.K_r:
                         self.running = False
                         self.restart = True
@@ -111,8 +120,6 @@ class Main:
             self.mouse.draw(self.surface)
 
             self.spawn()
-
-            self.sd = pygame.display.Info()
 
             calc.clean_up(self.explode_group)
             calc.clean_up(self.large_group)
@@ -180,7 +187,39 @@ class Main:
             self.restart = False
             self.start()
 
-    def menu_loop(self):
+    def main_menu_loop(self):
+        menu_running = True
+        while menu_running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    menu_running = False
+                    self.running = False
+
+            if self.main_menu.get("Start").action():
+                menu_running = False
+            elif self.main_menu.get("Quit").action():
+                quit()
+
+            self.mouse.update()
+            self.main_menu.update(self.mouse)
+
+            self.surface.fill((0, 0, 0))
+
+            font = pygame.font.SysFont("Arial", 100)
+            render = font.render("Interstellar Inception", True, (255, 255, 255))
+            fontrect = render.get_rect()
+            fontrect.centerx = self.midpoint[0]
+            fontrect.y = 50
+
+            self.surface.blit(render, fontrect)
+
+            self.main_menu.draw(self.surface)
+            self.mouse.draw(self.surface)
+
+            pygame.display.update()
+            self.clock.tick(self.fps)
+
+    def pause_menu_loop(self):
         menu_running = True
         while menu_running:
             for event in pygame.event.get():
@@ -193,10 +232,7 @@ class Main:
 
             self.mouse.update()
 
-            # self.menu.update(self.mouse)
-
-            self.buttons[0].update(self.mouse)
-            self.buttons[1].update(self.mouse)
+            self.pause_menu.update(self.mouse)
 
             self.surface.fill((0, 0, 0))
 
@@ -206,18 +242,32 @@ class Main:
             self.explode_group.draw(self.surface)
             self.planet.draw(self.surface)
 
-            # self.menu.draw(self.surface)
-            self.buttons[0].draw(self.surface)
-            self.buttons[1].draw(self.surface)
+            self.pause_menu.draw(self.surface)
 
             self.mouse.draw(self.surface)
 
-            # if self.menu.get("Resume").pressed:
-            #     menu_running = False
-            # elif self.menu.get("Restart").pressed:
-            #     self.start()
+            if self.pause_menu.get("Resume").action():
+                menu_running = False
+            elif self.pause_menu.get("Restart").action():
+                self.start()
+                menu_running = False
+            elif self.pause_menu.get("Controls").action():
+                pass
+            elif self.pause_menu.get("Main Menu").action():
+                self.menu()
+            elif self.pause_menu.get("Quit").action():
+                menu_running = False
+                self.running = False
+                # if self.fullscreen:
+                #     self.surface = pygame.display.set_mode(self.min_res, pygame.RESIZABLE)
+                #     self.fullscreen = False
+                # else:
+                #     self.min_res = cfg.dim
+                #     self.surface = pygame.display.set_mode(self.max_res, pygame.FULLSCREEN)
+                #     self.fullscreen = True
 
             pygame.display.update()
+            self.clock.tick(self.fps)
 
     def spawn(self):
         if time.time() - self.time_init > self.wait:
@@ -243,7 +293,11 @@ class Main:
         return self.small_group.sprites()
 
     def start(self):
-        self.__init__()
+        self.multi_init()
+
+    def menu(self):
+        self.main_menu_loop()
+        self.multi_init()
 
 
 main = Main()

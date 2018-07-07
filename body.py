@@ -175,6 +175,9 @@ class Planet(Body):
 
         self.radius = self.rect.w / 2
 
+    def update_loc(self):
+        self.rect.center = (cfg.dim[0] / 2, cfg.dim[1] / 2)
+
 
 class Mouse(Body):
     def __init__(self):

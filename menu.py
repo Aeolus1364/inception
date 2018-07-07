@@ -4,26 +4,52 @@ import pygame, res
 class Button:
     def __init__(self, text, fs, center):
         self.text = text
-        self.surf = res.button_unpressed
-        self.rect = self.surf.get_rect()
 
-        self.font = pygame.font.SysFont("Arial", 30)
-        self.render = self.font.render(text, False, (0,0,0))
+        self.image_pressed = res.button_pressed.copy()
+        self.image_unpressed = res.button_unpressed.copy()
 
-        self.surf.blit(self.render, (0,0))
+        self.image = self.image_unpressed
+        self.rect = self.image.get_rect()
+
+        font = pygame.font.SysFont("Arial", fs)
+        render = font.render(text, True, (0, 0, 0))
+        fontrect = render.get_rect()
+        fontrect.center = self.rect.center
+
+        self.image_pressed.blit(render, fontrect)
+        fontrect.y += 1
+        fontrect.x -= 1
+        self.image_unpressed.blit(render, fontrect)
+
+        self.rect.center = center
 
         self.hover = 0
         self.pressed = 0
+        self.clicked = 0
+        self.pressed_past = 0
 
     def update(self, mouse):
         self.hover = self.rect.collidepoint(mouse.pos()[0], mouse.pos()[1])
-        if self.hover:
-            self.pressed = mouse.state
+        self.clicked = mouse.state
+
+        self.pressed_past = self.pressed
+
+        if self.hover and self.clicked:
+            self.pressed = True
         else:
-            self.pressed = 0
+            self.pressed = False
+
+        if self.pressed:
+            self.image = self.image_pressed
+        else:
+            self.image = self.image_unpressed
 
     def draw(self, surf):
-        surf.blit(self.surf, self.rect)
+        surf.blit(self.image, self.rect)
+
+    def action(self):
+        if not self.pressed and self.pressed_past and self.hover:
+            return True
 
 
 class Menu:
@@ -44,7 +70,7 @@ class Menu:
 
     def draw(self, surface):
         for i in self.buttons:
-            surface.blit(i.surf, i.rect)
+            surface.blit(i.image, i.rect)
 
     def get(self, name):
         for i in self.buttons:
