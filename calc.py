@@ -1,6 +1,7 @@
 import math
 import cfg
 import pygame
+import random
 
 
 def grav_acc(loc1, loc2, mass, negative=False):
@@ -71,3 +72,22 @@ def resize(rect, image, factor):
     rect = image.get_rect()
     rect.center = center
     return rect, image
+
+
+def weighted_choices(choices, weights):
+    total = 0
+    weights_c = []
+    holder = 0
+    for i in weights:
+        total += i
+    for i in weights:
+        weights_c.append(i/total)
+    rand = random.uniform(0, 1)
+    for i in range(len(weights_c)):
+        print(rand, holder, weights_c[i] + holder)
+        if holder < rand < holder + weights_c[i]:
+            return choices[i]
+        else:
+            holder = holder + weights_c[i]
+
+    print("end")

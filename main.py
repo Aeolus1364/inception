@@ -25,7 +25,6 @@ class Main:
         pygame.mouse.set_visible(False)
 
         self.running = True
-        self.restart = False
         self.clock = pygame.time.Clock()
 
         self.surface = pygame.display.set_mode(cfg.dim)
@@ -69,6 +68,8 @@ class Main:
 
         self.pause_menu = menu.Menu(buttons)
 
+        self.restart_button = menu.Button("Restart?", 30, (self.midpoint[0], self.midpoint[1] + 50))
+
         self.main_loop()
 
     def main_loop(self):
@@ -85,8 +86,7 @@ class Main:
                         if self.planet.alive:
                             self.pause_menu_loop()
                     if event.key == pygame.K_r:
-                        self.running = False
-                        self.restart = True
+                        self.start()
 
             if self.mouse.state:
                 grav_on = True
@@ -116,6 +116,18 @@ class Main:
             self.large_group.draw(self.surface)
             self.explode_group.draw(self.surface)
             self.planet.draw(self.surface)
+
+            if not self.planet.alive:
+                font = pygame.font.SysFont('Arial', 60)
+                textsurf = font.render('Game Over', True, (255, 255, 255))
+                rect = textsurf.get_rect()
+                rect.centerx = self.surface.get_rect().centerx
+                rect.centery = self.surface.get_rect().centery - 50
+                self.surface.blit(textsurf, rect)
+                self.restart_button.update(self.mouse)
+                self.restart_button.draw(self.surface)
+                if self.restart_button.action():
+                    self.start()
 
             self.mouse.draw(self.surface)
 
@@ -173,19 +185,10 @@ class Main:
                         self.explode_group.add(body.Small(self.planet.rect.center))
                     self.planet.kill()
 
-            if not self.planet.alive:
-                font = pygame.font.SysFont('Arial', 60)
-                textsurf = font.render('Game Over Press R to Restart', True, (255, 255, 255))
-                rect = textsurf.get_rect()
-                rect.center = self.surface.get_rect().center
-                self.surface.blit(textsurf, rect)
+
 
             pygame.display.update()
             self.clock.tick(self.fps)
-
-        if self.restart:
-            self.restart = False
-            self.start()
 
     def main_menu_loop(self):
         menu_running = True
@@ -256,25 +259,16 @@ class Main:
             elif self.pause_menu.get("Main Menu").action():
                 self.menu()
             elif self.pause_menu.get("Quit").action():
-                menu_running = False
-                self.running = False
-                # if self.fullscreen:
-                #     self.surface = pygame.display.set_mode(self.min_res, pygame.RESIZABLE)
-                #     self.fullscreen = False
-                # else:
-                #     self.min_res = cfg.dim
-                #     self.surface = pygame.display.set_mode(self.max_res, pygame.FULLSCREEN)
-                #     self.fullscreen = True
+                quit()
 
             pygame.display.update()
-            self.clock.tick(self.fps)
 
     def spawn(self):
         if time.time() - self.time_init > self.wait:
             self.time_init = time.time()
             self.wait = random.uniform(0, 4)
-            type = random.choices(("large", "medium", "small"), cfg.spawn_rate)
-            type = type[0]
+            type = calc.weighted_choices(("large", "small", "medium"), cfg.spawn_rate)
+            print(type)
 
             if type == "large":
                 self.large_group.add(body.Large())
