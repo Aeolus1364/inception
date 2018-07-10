@@ -6,16 +6,22 @@ import random
 import time
 import res
 import menu
+import sys
 
 pygame.init()
 pygame.mixer.music.load("res/music.wav")
 pygame.mixer.music.play(-1)
 
+cfg.init()
+
+started = False
+fullscreen = False
+
 
 class Main:
     def __init__(self):
-        cfg.init()
-
+        global started
+        global fullscreen
         self.data = pygame.display.Info()
         self.max_res = self.data.current_w, self.data.current_h
         self.min_res = cfg.dim
@@ -27,7 +33,12 @@ class Main:
         self.running = True
         self.clock = pygame.time.Clock()
 
-        self.surface = pygame.display.set_mode(cfg.dim)
+        if fullscreen:
+            self.surface = pygame.display.set_mode(cfg.dim, pygame.FULLSCREEN)
+        else:
+            self.surface = pygame.display.set_mode(cfg.dim)
+
+
         self.fps = 30
         self.fullscreen = False
         self.midpoint = (cfg.dim[0] / 2, cfg.dim[1] / 2)
@@ -41,6 +52,15 @@ class Main:
             menu.Button("Credits", 30, (self.midpoint[0], self.midpoint[1] + 75)),
             menu.Button("Quit", 30, (self.midpoint[0], self.midpoint[1] + 150))
         ]
+
+        if not started:
+            self.res_button = menu.CycleButton(("1280 x 800", "1920 x 1080"), 30, (self.midpoint[0], self.midpoint[1] - 75))
+            self.windowed_button = menu.CycleButton(("Windowed", "Fullscreen"), 30, (self.midpoint[0], self.midpoint[1]))
+            started = True
+
+        self.apply_button = menu.Button("Apply", 30, (self.midpoint[0], self.midpoint[1] + 75))
+        self.res_button.center = (self.midpoint[0], self.midpoint[1] - 75)
+        self.windowed_button.center = (self.midpoint[0], self.midpoint[1])
 
         self.main_menu = menu.Menu(buttons)
 
@@ -77,7 +97,7 @@ class Main:
         while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.running = False
+                    self.quit()
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_q:
@@ -195,13 +215,15 @@ class Main:
         while menu_running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    menu_running = False
-                    self.running = False
+                    self.quit()
 
             if self.main_menu.get("Start").action():
                 menu_running = False
             elif self.main_menu.get("Quit").action():
-                quit()
+                self.quit()
+            elif self.main_menu.get("Settings").action():
+                self.settings_menu()
+                self.__init__()
 
             self.mouse.update()
             self.main_menu.update(self.mouse)
@@ -217,6 +239,55 @@ class Main:
             self.surface.blit(render, fontrect)
 
             self.main_menu.draw(self.surface)
+            self.mouse.draw(self.surface)
+
+            pygame.display.update()
+            self.clock.tick(self.fps)
+
+    def settings_menu(self):
+        global fullscreen
+        menu_running = True
+        while menu_running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.quit()
+
+            self.mouse.update()
+            self.res_button.update(self.mouse)
+            self.windowed_button.update(self.mouse)
+            self.apply_button.update(self.mouse)
+            self.res_button.action()
+            self.windowed_button.action()
+
+            if self.apply_button.action():
+                menu_running = False
+                # self.menu()
+
+                res = self.res_button.get_text()
+                if res == "1280 x 800":
+                    cfg.dim = (1280, 800)
+                elif res == "1920 x 1080":
+                    cfg.dim = (1920, 1080)
+
+                wind = self.windowed_button.get_text()
+                if wind == "Windowed":
+                    fullscreen = False
+                elif wind == "Fullscreen":
+                    fullscreen = True
+
+            self.surface.fill((0, 0, 0))
+
+            font = pygame.font.SysFont("Arial", 100)
+            render = font.render("Interstellar Inception", True, (255, 255, 255))
+            fontrect = render.get_rect()
+            fontrect.centerx = self.midpoint[0]
+            fontrect.y = 50
+
+            self.surface.blit(render, fontrect)
+
+            self.res_button.draw(self.surface)
+            self.windowed_button.draw(self.surface)
+            self.apply_button.draw(self.surface)
             self.mouse.draw(self.surface)
 
             pygame.display.update()
@@ -259,7 +330,7 @@ class Main:
             elif self.pause_menu.get("Main Menu").action():
                 self.menu()
             elif self.pause_menu.get("Quit").action():
-                quit()
+                self.quit()
 
             pygame.display.update()
 
@@ -268,7 +339,6 @@ class Main:
             self.time_init = time.time()
             self.wait = random.uniform(0, 4)
             type = calc.weighted_choices(("large", "small", "medium"), cfg.spawn_rate)
-            print(type)
 
             if type == "large":
                 self.large_group.add(body.Large())
@@ -292,6 +362,10 @@ class Main:
     def menu(self):
         self.main_menu_loop()
         self.multi_init()
+
+    def quit(self):
+        pygame.quit()
+        sys.exit()
 
 
 main = Main()

@@ -89,5 +89,3 @@ def weighted_choices(choices, weights):
             return choices[i]
         else:
             holder = holder + weights_c[i]
-
-    print("end")
