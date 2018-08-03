@@ -72,11 +72,11 @@ class Main:
         self.time_init = time.time()
         self.wait = 0
 
-        self.large_group = body.Group()
-        self.medium_group = body.Group()
-        self.small_group = body.Group()
-        self.explode_group = body.Group()
+        self.objects = body.Group()
         self.planet = body.Planet()
+
+        # for i in range(50):
+        #     self.objects.add(body.Object())
 
         buttons = [
             menu.Button("Resume", 30, (self.midpoint[0], self.midpoint[1] - 150)),
@@ -107,35 +107,40 @@ class Main:
                             self.pause_menu_loop()
                     if event.key == pygame.K_r:
                         self.start()
+                    if event.key == pygame.K_SPACE:
+                        self.objects.add(body.Object(50, self.mouse.pos()))
+                    if event.key == pygame.K_LEFT:
+                        self.objects.add(body.Object(50, self.mouse.pos()))
+
+                    if event.key == pygame.K_RIGHT:
+                        self.objects.add(body.Object(500, self.mouse.pos()))
 
             if self.mouse.state:
                 grav_on = True
             else:
                 grav_on = False
 
+            self.mouse.mass = self.planet.mass
+
             if grav_on:
-                calc.grav_iter(self.smalls(), self.mouse, True)
-                calc.grav_iter(self.mediums(), self.mouse, True)
-                calc.grav_iter(self.larges(), self.mouse, True)
+                calc.grav_iter(self.objects.sprites(), self.mouse, True)
             if self.planet.alive:
-                calc.grav_iter(self.smalls(), self.planet)
-                calc.grav_iter(self.mediums(), self.planet)
-                calc.grav_iter(self.larges(), self.planet)
+                calc.grav_iter(self.objects.sprites(), self.planet)
 
-            self.small_group.update()
-            self.medium_group.update()
-            self.large_group.update()
-            self.explode_group.update()
+            for i in self.objects.sprites():
+                if calc.circ_coll(i, self.planet):
+                    self.planet.add(i.mass)
+                    i.kill()
 
+            self.objects.update()
             self.mouse.update()
 
             self.surface.fill((0, 0, 0))
 
-            self.small_group.draw(self.surface)
-            self.medium_group.draw(self.surface)
-            self.large_group.draw(self.surface)
-            self.explode_group.draw(self.surface)
+            self.objects.draw(self.surface)
             self.planet.draw(self.surface)
+
+            self.spawn()
 
             if not self.planet.alive:
                 font = pygame.font.SysFont('Arial', 60)
@@ -151,61 +156,9 @@ class Main:
 
             self.mouse.draw(self.surface)
 
-            self.spawn()
+            # self.spawn()
 
-            calc.clean_up(self.explode_group)
-            calc.clean_up(self.large_group)
-            calc.clean_up(self.medium_group)
-            calc.clean_up(self.small_group)
-
-            for i in self.smalls():
-                if calc.circ_coll(i, self.planet):
-                    i.kill()
-                    self.planet.mass += 0.5
-                    self.planet.resize(1.02)
-
-            for i in self.mediums():
-                for j in self.mediums():
-                    if not i == j:
-                        if calc.circ_coll(i, j):
-                            for k in range(random.randint(5, 10)):
-                                self.small_group.add(body.Small(i.rect.center))
-                            i.kill()
-                            j.kill()
-                if calc.circ_coll(i, self.planet):
-                    if self.planet.alive:
-                        response = self.planet.bombard()
-                        if not response:
-                            for k in range(random.randint(5, 10)):
-                                self.explode_group.add(body.Medium(self.planet.rect.center))
-                            for k in range(random.randint(30, 40)):
-                                self.explode_group.add(body.Small(self.planet.rect.center))
-                            self.planet.kill()
-                        elif response:
-                            for k in range(random.randint(5, 10)):
-                                self.explode_group.add(body.Small(i.rect.center))
-                        i.kill()
-
-            for i in self.mediums():
-                for k in self.smalls():
-                    if calc.circ_coll(i, k):
-                        k.kill()
-
-            for i in self.larges():
-                for j in self.mediums():
-                    if calc.circ_coll(i, j):
-                        for k in range(random.randint(3, 8)):
-                            self.small_group.add(body.Small(i.rect.center))
-                            j.kill()
-                if calc.circ_coll(i, self.planet):
-                    i.kill()
-                    for k in range(random.randint(5, 10)):
-                        self.explode_group.add(body.Medium(self.planet.rect.center))
-                    for k in range(random.randint(30, 40)):
-                        self.explode_group.add(body.Small(self.planet.rect.center))
-                    self.planet.kill()
-
-
+            calc.clean_up(self.objects)
 
             pygame.display.update()
             self.clock.tick(self.fps)
@@ -310,10 +263,7 @@ class Main:
 
             self.surface.fill((0, 0, 0))
 
-            self.small_group.draw(self.surface)
-            self.medium_group.draw(self.surface)
-            self.large_group.draw(self.surface)
-            self.explode_group.draw(self.surface)
+            self.objects.draw(self.surface)
             self.planet.draw(self.surface)
 
             self.pause_menu.draw(self.surface)
@@ -338,23 +288,7 @@ class Main:
         if time.time() - self.time_init > self.wait:
             self.time_init = time.time()
             self.wait = random.uniform(0, 4)
-            type = calc.weighted_choices(("large", "small", "medium"), cfg.spawn_rate)
-
-            if type == "large":
-                self.large_group.add(body.Large())
-            elif type == "medium":
-                self.medium_group.add(body.Medium())
-            elif type == "small":
-                self.small_group.add(body.Small())
-
-    def larges(self):
-        return self.large_group.sprites()
-
-    def mediums(self):
-        return self.medium_group.sprites()
-
-    def smalls(self):
-        return self.small_group.sprites()
+            self.objects.add(body.Object(random.randint(int(self.planet.mass / 10), int(self.planet.mass * 1.5))))
 
     def start(self):
         self.multi_init()

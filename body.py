@@ -7,22 +7,35 @@ import res
 
 
 class Body(pygame.sprite.Sprite):
-    def __init__(self, image):
+    def __init__(self, mass):
         super().__init__()
-
-        self.image = image
-        self.rect = self.image.get_rect()
-
-        self.radius = self.rect.w / 2
-        self.mass = 0
+        self.mass = mass
 
         self.x_vel = 0
         self.y_vel = 0
         self.x_acc = 0
         self.y_acc = 0
-
         self.x = 0
         self.y = 0
+
+        self.radius = 0
+        self.image = None
+        self.rect = None
+
+        self.circle()
+
+    def add(self, mass):
+        self.mass += mass
+        center = self.rect.center
+        self.circle()
+        self.rect.center = center
+
+    def circle(self):
+        self.radius = int(math.sqrt(self.mass / math.pi))
+        self.image = pygame.Surface((self.radius * 2, self.radius * 2), pygame.SRCALPHA, 32)
+        self.image = self.image.convert_alpha()
+        self.rect = self.image.get_rect()
+        pygame.draw.circle(self.image, (255, 255, 255), self.rect.center, self.radius)
 
     def transpose(self):
         self.rect.x = round(self.x)
@@ -41,11 +54,9 @@ class Body(pygame.sprite.Sprite):
 
 
 class Object(Body):
-    def __init__(self, image, spawn_loc=None):
-        super().__init__(image)
-        factor = random.uniform(0.8, 1.25)
-        self.rect, self.image = calc.resize(self.rect, self.image, factor)
-        self.radius = self.rect.w / 2
+    def __init__(self, mass, spawn_loc=None):
+        self.mass = mass
+        super().__init__(self.mass)
 
         if spawn_loc:
             self.spawn_collision(1, 4, spawn_loc)
@@ -101,23 +112,8 @@ class Object(Body):
         self.rect.center = center
         self.x, self.y = self.rect.topleft
         num = random.uniform(vmin, vmax)
+        num = 0
         self.x_vel, self.y_vel = calc.vect2grid(num, random.randint(0, 360))
-
-
-class Small(Object):
-    def __init__(self, spawn_loc=None):
-        super().__init__(res.meteoroid, spawn_loc)
-
-
-class Medium(Object):
-    def __init__(self, spawn_loc=None):
-        super().__init__(res.asteroid, spawn_loc)
-        self.mass = 25
-
-
-class Large(Object):
-    def __init__(self, spawn_loc=None):
-        super().__init__(res.planetoid, spawn_loc)
 
 
 class Group(pygame.sprite.Group):
@@ -127,32 +123,26 @@ class Group(pygame.sprite.Group):
 
 class Planet(Body):
     def __init__(self):
-        super().__init__(res.asteroid)
-        self.image_original = self.image
-        self.rect_original = self.rect
-
+        super().__init__(3200)
         self.alive = True
         self.rect.center = (cfg.dim[0] / 2, cfg.dim[1] / 2)
-        # self.x, self.y = self.rect.topleft
-        self.mass = 15
-        self.size = 1
-        #
-        # print(self.x, self.y)
-        # print(self.rect.topleft)
+        self.draw_text()
 
     def draw(self, surf):
         if self.alive:
             surf.blit(self.image, self.rect)
-        if self.radius > 48:
-            self.image_original = res.roundy
-        if self.radius > 80:
-            self.image_original = res.planetoid
-        if self.radius > 128:
-            self.image_original = res.planet
-        if self.radius > 200:
-            self.image_original = res.gasgiant
-        if self.radius > 260:
-            self.image_original = res.star
+
+    def add(self, mass):
+        super().add(mass)
+        self.draw_text()
+
+    def draw_text(self):
+        font = pygame.font.SysFont("Arial", int(self.radius / 2))
+        render = font.render(str(self.mass), True, (0, 0, 0))
+        fontrect = render.get_rect()
+        fontrect.center = self.image.get_rect().center
+
+        self.image.blit(render, fontrect)
 
     def kill(self):
         self.alive = False
@@ -168,24 +158,20 @@ class Planet(Body):
             self.mass += 4
         return self.alive
 
-    def resize(self, factor):
-        self.size *= factor
-
-        self.rect, self.image = calc.resize(self.rect_original, self.image_original, self.size)
-
-        self.radius = self.rect.w / 2
-
     def update_loc(self):
         self.rect.center = (cfg.dim[0] / 2, cfg.dim[1] / 2)
 
 
-class Mouse(Body):
+class Mouse():
     def __init__(self):
-        super().__init__(res.mouse_clicked)
-        self.mass = 100
+        self.x = 0
+        self.y = 0
+        self.mass = 1000
         self.clicked = res.mouse_clicked
         self.unclicked = res.mouse_unclicked
         self.image = self.unclicked
+        self.rect = self.image.get_rect()
+        self.radius = self.rect.w / 2
         self.state = False
 
     def update(self, *args):
