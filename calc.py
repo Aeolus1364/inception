@@ -50,6 +50,28 @@ def circ_coll(obj1, obj2):
         return False
 
 
+def outcome(obj1, obj2):
+    tmass = obj1.mass + obj2.mass
+    mdiff = obj1.mass / tmass - obj2.mass / tmass
+
+    big = obj1
+    sml = obj2
+
+    if mdiff < 0:
+        big = obj2
+        sml = obj1
+
+    mdiff = abs(mdiff)
+
+    print(mdiff)
+
+    if mdiff > 0.3:
+        big.add(1 - mdiff * sml.mass)
+        sml.mark()
+
+
+
+
 def vect2grid(mag, ang):
     x = mag * math.cos(math.radians(ang))
     y = mag * math.sin(math.radians(ang))
@@ -74,18 +96,18 @@ def resize(rect, image, factor):
     return rect, image
 
 
-def weighted_choices(choices, weights):
-    total = 0
-    weights_c = []
-    holder = 0
-    for i in weights:
-        total += i
-    for i in weights:
-        weights_c.append(i/total)
-    rand = random.uniform(0, 1)
-    for i in range(len(weights_c)):
-        print(rand, holder, weights_c[i] + holder)
-        if holder < rand < holder + weights_c[i]:
-            return choices[i]
-        else:
-            holder = holder + weights_c[i]
+# def weighted_choices(choices, weights):
+#     total = 0
+#     weights_c = []
+#     holder = 0
+#     for i in weights:
+#         total += i
+#     for i in weights:
+#         weights_c.append(i/total)
+#     rand = random.uniform(0, 1)
+#     for i in range(len(weights_c)):
+#         print(rand, holder, weights_c[i] + holder)
+#         if holder < rand < holder + weights_c[i]:
+#             return choices[i]
+#         else:
+#             holder = holder + weights_c[i]

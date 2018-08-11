@@ -38,7 +38,6 @@ class Main:
         else:
             self.surface = pygame.display.set_mode(cfg.dim)
 
-
         self.fps = 30
         self.fullscreen = False
         self.midpoint = (cfg.dim[0] / 2, cfg.dim[1] / 2)
@@ -127,10 +126,23 @@ class Main:
             if self.planet.alive:
                 calc.grav_iter(self.objects.sprites(), self.planet)
 
-            for i in self.objects.sprites():
-                if calc.circ_coll(i, self.planet):
-                    self.planet.add(i.mass)
-                    i.kill()
+            # for i in self.objects.sprites():
+            #     if calc.circ_coll(i, self.planet):
+            #         self.planet.add(i.mass)
+            #         i.kill()
+
+            sprites = self.objects.sprites()
+
+            for i, obj1 in enumerate(sprites):
+                for j in range(i+1, len(sprites)):
+                    obj2 = sprites[j]
+                    if calc.circ_coll(obj1, obj2):
+                        calc.outcome(obj1, obj2)
+
+            for obj in sprites:
+                if calc.circ_coll(obj, self.planet):
+                    self.planet.add(obj.mass)
+                    obj.mark()
 
             self.objects.update()
             self.mouse.update()

@@ -21,6 +21,7 @@ class Body(pygame.sprite.Sprite):
         self.radius = 0
         self.image = None
         self.rect = None
+        self.marked = False
 
         self.circle()
 
@@ -51,6 +52,12 @@ class Body(pygame.sprite.Sprite):
         self.y_acc = 0
 
         self.transpose()
+
+        if self.marked:
+            self.kill()
+
+    def mark(self):
+        self.marked = True
 
 
 class Object(Body):
@@ -112,7 +119,6 @@ class Object(Body):
         self.rect.center = center
         self.x, self.y = self.rect.topleft
         num = random.uniform(vmin, vmax)
-        num = 0
         self.x_vel, self.y_vel = calc.vect2grid(num, random.randint(0, 360))
 
 
@@ -147,22 +153,12 @@ class Planet(Body):
     def kill(self):
         self.alive = False
 
-    def bombard(self):
-        if self.mass < 20:
-            self.kill()
-            return False
-        elif self.mass < 150:
-            self.mass -= 2
-            return True
-        else:
-            self.mass += 4
-        return self.alive
 
     def update_loc(self):
         self.rect.center = (cfg.dim[0] / 2, cfg.dim[1] / 2)
 
 
-class Mouse():
+class Mouse:
     def __init__(self):
         self.x = 0
         self.y = 0
